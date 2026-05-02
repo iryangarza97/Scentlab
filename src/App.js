@@ -35,7 +35,7 @@ const BANK_INFO = {
   linkPago: "https://link.mercadopago.com.mx/scentlab",
 };
 
-const WA_NUMBER = "521234567890"; // <-- cambia por tu número real con código de país sin +
+const WA_NUMBER = "5218125206737"; // <-- cambia por tu número real con código de país sin +
 
 const STATUS_META = {
   "Pendiente":      { color: "#b8a060", bg: "#1a1500" },
