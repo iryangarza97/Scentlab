@@ -12,21 +12,21 @@ const SIZES = [
 ];
 
 const ESSENCES_DAMA = [
-  "La Bomba · Carolina Herrera",
-  "J'adore · Dior",
-  "Libre · YSL",
-  "Cosmic · Kylie Jenner",
-  "BFF · KKW",
-  "Sugar Pink · Aquolina",
+  "La Bomba - Carolina Herrera",
+  "J'adore - Dior",
+  "Libre - YSL",
+  "Cosmic - Kylie Jenner",
+  "BFF - KKW",
+  "Sugar Pink - Aquolina",
 ];
 
 const ESSENCES_CABALLERO = [
-  "Bad Boy · Carolina Herrera",
-  "L'Immensite · Louis Vuitton",
-  "Dylan Blue · Versace",
-  "Aventus · Creed",
-  "Polo 67 · Ralph Lauren",
-  "Stronger With You · Armani",
+  "Bad Boy - Carolina Herrera",
+  "L'Immensite - Louis Vuitton",
+  "Dylan Blue - Versace",
+  "Aventus - Creed",
+  "Polo 67 - Ralph Lauren",
+  "Stronger With You - Armani",
 ];
 
 const BANK_INFO = {
