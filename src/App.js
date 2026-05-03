@@ -2,18 +2,27 @@ import { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot, updateDoc } from "firebase/firestore";
 
-// ─── FIREBASE CONFIG — reemplazá con tus datos ───────────────────
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "npm install firebase",
-  authDomain: "npm install firebase",
-  projectId: "npm install firebase",
-  storageBucket: "npm install firebase",
-  messagingSenderId: "npm install firebase",
-  appId: "npm install firebase",
+  apiKey: "AIzaSyBfuYAD28etiTZG_lGQZ3PkjRIxQ4SumBk",
+  authDomain: "scentlab-cef71.firebaseapp.com",
+  projectId: "scentlab-cef71",
+  storageBucket: "scentlab-cef71.firebasestorage.app",
+  messagingSenderId: "50214857080",
+  appId: "1:50214857080:web:9a941f1a422b598d1c408d",
+  measurementId: "G-PYGH8YKPS9"
 };
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-// ─────────────────────────────────────────────────────────────────
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 const ADMIN_PASSWORD = "iagg260897";
 const WA_NUMBER = "5218125206737";
