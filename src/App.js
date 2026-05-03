@@ -1,4 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot, updateDoc } from "firebase/firestore";
+
+// ─── FIREBASE CONFIG — reemplazá con tus datos ───────────────────
+const firebaseConfig = {
+  apiKey: "npm install firebase",
+  authDomain: "npm install firebase",
+  projectId: "npm install firebase",
+  storageBucket: "npm install firebase",
+  messagingSenderId: "npm install firebase",
+  appId: "npm install firebase",
+};
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+// ─────────────────────────────────────────────────────────────────
 
 const ADMIN_PASSWORD = "iagg260897";
 const WA_NUMBER = "5218125206737";
@@ -12,21 +27,21 @@ const SIZES = [
 ];
 
 const ESSENCES_DAMA = [
-  "La Bomba - Carolina Herrera",
-  "J'adore - Dior",
-  "Libre - YSL",
-  "Cosmic - Kylie Jenner",
-  "BFF - KKW",
-  "Sugar Pink - Aquolina",
+  "La Bomba · Carolina Herrera",
+  "J'adore · Dior",
+  "Libre · YSL",
+  "Cosmic · Kylie Jenner",
+  "BFF · KKW",
+  "Sugar Pink · Aquolina",
 ];
 
 const ESSENCES_CABALLERO = [
-  "Bad Boy - Carolina Herrera",
-  "L'Immensite - Louis Vuitton",
-  "Dylan Blue - Versace",
-  "Aventus - Creed",
-  "Polo 67 - Ralph Lauren",
-  "Stronger With You - Armani",
+  "Bad Boy · Carolina Herrera",
+  "L'Immensite · Louis Vuitton",
+  "Dylan Blue · Versace",
+  "Aventus · Creed",
+  "Polo 67 · Ralph Lauren",
+  "Stronger With You · Armani",
 ];
 
 const BANK_INFO = {
@@ -92,6 +107,23 @@ export default function App() {
   // Admin
   const [orders, setOrders] = useState([]);
   const [essenceStock, setEssenceStock] = useState(initialEssenceStock);
+  const [dbReady, setDbReady] = useState(false);
+
+  // ── Load from Firebase on mount ──
+  useEffect(() => {
+    // Listen to orders in real time
+    const unsubOrders = onSnapshot(collection(db, "orders"), snap => {
+      const loaded = snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
+      loaded.sort((a, b) => b.id.localeCompare(a.id));
+      setOrders(loaded);
+    });
+    // Load essence stock
+    getDoc(doc(db, "config", "essenceStock")).then(snap => {
+      if (snap.exists()) setEssenceStock(snap.data());
+      setDbReady(true);
+    });
+    return () => unsubOrders();
+  }, []);
   const [adminTab, setAdminTab] = useState("orders");
   const [newEssence, setNewEssence] = useState({ name: "", gender: "dama" });
 
@@ -130,6 +162,7 @@ export default function App() {
       status: "Pendiente",
     };
     setOrders(prev => [order, ...prev]);
+    addDoc(collection(db, "orders"), order).catch(console.error);
     setPlacedOrder(order);
     setCart([]);
     setStep("confirm");
@@ -151,13 +184,28 @@ export default function App() {
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
-  const toggleEssence = name => setEssenceStock(prev => ({ ...prev, [name]: !prev[name] }));
+  const toggleEssence = name => {
+    setEssenceStock(prev => {
+      const updated = { ...prev, [name]: !prev[name] };
+      setDoc(doc(db, "config", "essenceStock"), updated).catch(console.error);
+      return updated;
+    });
+  };
   const addNewEssence = () => {
     if (!newEssence.name.trim()) return;
-    setEssenceStock(prev => ({ ...prev, [newEssence.name]: true }));
+    setEssenceStock(prev => {
+      const updated = { ...prev, [newEssence.name]: true };
+      setDoc(doc(db, "config", "essenceStock"), updated).catch(console.error);
+      return updated;
+    });
     setNewEssence({ name: "", gender: "dama" });
   };
-  const updateStatus = (id, status) => setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+  const updateStatus = (id, status) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    // Update in Firebase
+    const order = orders.find(o => o.id === id);
+    if (order && order._docId) updateDoc(doc(db, "orders", order._docId), { status }).catch(console.error);
+  };
 
   const C = {
     bg: "#f5f0e8",
