@@ -67,20 +67,20 @@ const STATUS_MSG = {
   "Cancelado":      "Tu pedido fue cancelado. Escríbenos si tienes dudas.",
 };
 
-// Stock solo por esencia (sin tamaño — se fabrica al momento)
+// Stock por esencia — { available: bool, gender: "dama"|"caballero" }
 const initialEssenceStock = {
-  "La Bomba · Carolina Herrera": true,
-  "J'adore · Dior": true,
-  "Libre · YSL": true,
-  "Cosmic · Kylie Jenner": true,
-  "BFF · KKW": true,
-  "Sugar Pink · Aquolina": true,
-  "Bad Boy · Carolina Herrera": true,
-  "L'Immensite · Louis Vuitton": true,
-  "Dylan Blue · Versace": true,
-  "Aventus · Creed": true,
-  "Polo 67 · Ralph Lauren": true,
-  "Stronger With You · Armani": true,
+  "La Bomba · Carolina Herrera":    { available: true,  gender: "dama" },
+  "J'adore · Dior":                 { available: true,  gender: "dama" },
+  "Libre · YSL":                    { available: true,  gender: "dama" },
+  "Cosmic · Kylie Jenner":          { available: true,  gender: "dama" },
+  "BFF · KKW":                      { available: true,  gender: "dama" },
+  "Sugar Pink · Aquolina":          { available: true,  gender: "dama" },
+  "Bad Boy · Carolina Herrera":     { available: true,  gender: "caballero" },
+  "L'Immensite · Louis Vuitton":    { available: true,  gender: "caballero" },
+  "Dylan Blue · Versace":           { available: true,  gender: "caballero" },
+  "Aventus · Creed":                { available: true,  gender: "caballero" },
+  "Polo 67 · Ralph Lauren":         { available: true,  gender: "caballero" },
+  "Stronger With You · Armani":     { available: true,  gender: "caballero" },
 };
 
 export default function App() {
@@ -128,15 +128,9 @@ export default function App() {
   const cartTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const currentPrice = selSize ? SIZES.find(s => s.label === selSize)?.price : null;
-  // Combina las esencias fijas + las agregadas desde admin (desde Firebase)
-  const allDama = [...new Set([...ESSENCES_DAMA, ...Object.keys(essenceStock).filter(e => !ESSENCES_CABALLERO.includes(e) && !ESSENCES_DAMA.includes(e) ? false : ESSENCES_DAMA.includes(e))])];
-  const allCaballero = [...new Set([...ESSENCES_CABALLERO, ...Object.keys(essenceStock).filter(e => ESSENCES_CABALLERO.includes(e))])];
-  // Esencias nuevas agregadas por admin (no están en las listas fijas)
-  const extraKeys = Object.keys(essenceStock).filter(e => !ESSENCES_DAMA.includes(e) && !ESSENCES_CABALLERO.includes(e));
-  const essenceList = gender === "dama"
-    ? [...ESSENCES_DAMA, ...extraKeys].filter(e => essenceStock.hasOwnProperty(e))
-    : [...ESSENCES_CABALLERO, ...extraKeys].filter(e => essenceStock.hasOwnProperty(e));
-  const allEssences = [...new Set([...Object.keys(essenceStock)])];
+  // Lista filtrada por género seleccionado
+  const essenceList = Object.keys(essenceStock).filter(e => essenceStock[e]?.gender === gender);
+  const allEssences = Object.keys(essenceStock);
 
   const tryLogin = () => {
     if (pwInput === ADMIN_PASSWORD) { setAdminUnlocked(true); setPwError(false); }
@@ -191,7 +185,7 @@ export default function App() {
 
   const toggleEssence = name => {
     setEssenceStock(prev => {
-      const updated = { ...prev, [name]: !prev[name] };
+      const updated = { ...prev, [name]: { ...prev[name], available: !prev[name]?.available } };
       setDoc(doc(db, "config", "essenceStock"), updated).catch(console.error);
       return updated;
     });
@@ -199,7 +193,7 @@ export default function App() {
   const addNewEssence = () => {
     if (!newEssence.name.trim()) return;
     setEssenceStock(prev => {
-      const updated = { ...prev, [newEssence.name]: true };
+      const updated = { ...prev, [newEssence.name]: { available: true, gender: newEssence.gender } };
       setDoc(doc(db, "config", "essenceStock"), updated).catch(console.error);
       return updated;
     });
@@ -353,15 +347,15 @@ export default function App() {
                     <div style={{ maxWidth: 440 }}>
                       <select value={selEssence} onChange={e => setSelEssence(e.target.value)} style={{ fontSize: 16, fontStyle: selEssence ? "italic" : "normal" }}>
                         <option value="">— Elegí tu esencia —</option>
-                        {essenceList.filter(e => essenceStock[e]).map(e => <option key={e} value={e}>{e}</option>)}
-                        {essenceList.filter(e => !essenceStock[e]).map(e => <option key={e} value={e} disabled>🚫 {e} (agotado)</option>)}
+                        {essenceList.filter(e => essenceStock[e]?.available).map(e => <option key={e} value={e}>{e}</option>)}
+                        {essenceList.filter(e => !essenceStock[e]?.available).map(e => <option key={e} value={e} disabled>🚫 {e} (agotado)</option>)}
                       </select>
                     </div>
                   </div>
                 )}
 
                 {/* Summary */}
-                {gender && selSize && selEssence && essenceStock[selEssence] && (
+                {gender && selSize && selEssence && essenceStock[selEssence]?.available && (
                   <div className="fu card" style={{ maxWidth: 420, padding: "28px 28px 24px", marginBottom: 32 }}>
                     <div style={{ width: 28, height: 3, background: C.gold, borderRadius: 2, marginBottom: 20 }} />
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2.5, color: C.textFaint, marginBottom: 8, textTransform: "uppercase" }}>{gender} · {selSize}</div>
@@ -377,13 +371,13 @@ export default function App() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 12 }}>
                     {allEssences.map(e => (
                       <div key={e} className="card" style={{ padding: "18px 18px 16px", opacity: essenceStock[e] ? 1 : 0.5 }}>
-                        <div style={{ width: 18, height: 2.5, background: essenceStock[e] ? C.gold : "#c0b090", borderRadius: 2, marginBottom: 12 }} />
+                        <div style={{ width: 18, height: 2.5, background: essenceStock[e]?.available ? C.gold : "#c0b090", borderRadius: 2, marginBottom: 12 }} />
                         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: C.textFaint, marginBottom: 6, textTransform: "uppercase" }}>
-                          {ESSENCES_CABALLERO.includes(e) ? "Caballero" : "Dama"}
+                          {essenceStock[e]?.gender === "caballero" ? "Caballero" : "Dama"}
                         </div>
                         <div style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: 14, color: C.textMid, lineHeight: 1.4 }}>{e}</div>
-                        <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: essenceStock[e] ? C.green : C.red, textTransform: "uppercase" }}>
-                          {essenceStock[e] ? "Disponible" : "Agotado"}
+                        <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: essenceStock[e]?.available ? C.green : C.red, textTransform: "uppercase" }}>
+                          {essenceStock[e]?.available ? "Disponible" : "Agotado"}
                         </div>
                       </div>
                     ))}
@@ -617,9 +611,9 @@ export default function App() {
                         <div key={e} className="toggle">
                           <div>
                             <div style={{ fontSize: 15, fontFamily: "'Playfair Display', serif", fontStyle: "italic", color: C.text, fontWeight: 500 }}>{e}</div>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: essenceStock[e] ? C.green : C.red, letterSpacing: 1.5, marginTop: 3, textTransform: "uppercase" }}>{essenceStock[e] ? "Disponible" : "Agotado"}</div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: essenceStock[e]?.available ? C.green : C.red, letterSpacing: 1.5, marginTop: 3, textTransform: "uppercase" }}>{essenceStock[e]?.available ? "Disponible" : "Agotado"}</div>
                           </div>
-                          <button className={`btn toggle-switch ${essenceStock[e] ? "toggle-on" : "toggle-off"}`} onClick={() => toggleEssence(e)} />
+                          <button className={`btn toggle-switch ${essenceStock[e]?.available ? "toggle-on" : "toggle-off"}`} onClick={() => toggleEssence(e)} />
                         </div>
                       ))}
                     </div>
